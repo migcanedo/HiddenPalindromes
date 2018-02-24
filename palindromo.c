@@ -7,21 +7,30 @@
 
 typedef int bool;
 /*
-	Funcion que imprime el substring del string 'str', que va
-	desde la posicion 'inf' hasta la posicion 'sup'.
+	Funcion que imprime el arreglo de strings 'arreglo' 
+	de tamaño 'tam' separando cada elemento por comas
+	y liberando el espacio utilizado.
 */
-void printSubStr( char* str, int inf, int sup){
+void printArray(char* arreglo[], int tam){
 	int i;
-	for(i = inf; i <= sup; ++i)
-		printf("%c", str[i]);
-	printf(", ");
+	for(i = 0; i < tam; ++i){
+		if (i != tam-1) printf("%s, ", arreglo[i]);
+		else printf("%s\n", arreglo[i]);
+		free(arreglo[i]);
+	}
 }
 
-void subPalindromos(char *str){
+
+/*
+	Funcion que detecta e imprime en pantalla, los substring
+	que sean Palindromos del string 'str'. Retornara la cantidad de 
+	palindromos encontrados.
+*/
+int subPalindromos(char* str, char* palindromos[]){
 	int n = strlen(str); // Tamaño del string.
 
 	// Variables de iteracion
-	int i,j,k;
+	int i, j ,k, posArreglo = 0;
 
 	// tabla[i][j] sera falso si str[i..j] no es palindromo.
 	// Caso contrario, tabla[i][j] sera verdad.
@@ -36,6 +45,13 @@ void subPalindromos(char *str){
 	for (i = 0; i < n; ++i)
 		tabla[i][i] = TRUE;
 
+	// Detecta todos los substring de tamaño 2 que se repitan las letras, 
+	// ej: 'aa', 'bb'.
+    for (i = 0; i < n-1; ++i)
+        if (str[i] == str[i+1])
+            tabla[i][i+1] = TRUE;
+    
+
 	// Iteramos deacuerdo al tamaño de cada substring (k).
 	for (k = 3; k <= n; ++k){
 		// i es el indice inicla del substring.
@@ -47,17 +63,34 @@ void subPalindromos(char *str){
 			if (tabla[i+1][j-1] && str[i] == str[j]){
 				tabla[i][j] = TRUE;
 				
-	            printSubStr(str, i, j);
+				char * aux = malloc(sizeof(char)*(j-i)+1);
+
+				int c1 = 0, c2;
+				for(c2 = i; c2 <= j; c2++){
+					aux[c1] = str[c2];
+					c1++;
+				}
+				aux[c1] = '\0';
+
+				palindromos[posArreglo] = aux;
+
+				posArreglo++;
 			}
 		}
 	}
+
+	return posArreglo;
 }
+
+
 
 // Main para probar la funcion
 int main(){
-	char str[] = "abbabba";
-	subPalindromos(str);
-	printf("\n");
+	char str[] = "ababa";
+	char* palindromos[10000]; 
+	int nPalindromos = subPalindromos(str, palindromos);
+
+	printArray(palindromos, nPalindromos);
 
 	exit(0);
 }
