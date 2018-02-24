@@ -20,17 +20,17 @@ void printArray(char* arreglo[], int tam){
 	}
 }
 
-
 /*
-	Funcion que detecta e imprime en pantalla, los substring
+	Funcion que detecta y almacena en el arreglo 'palindromos' 
+	(el cual ya posee 'nPalindromos' almacenados), los substring
 	que sean Palindromos del string 'str'. Retornara la cantidad de 
 	palindromos encontrados.
 */
-int subPalindromos(char* str, char* palindromos[]){
+int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 	int n = strlen(str); // Tamaño del string.
 
 	// Variables de iteracion
-	int i, j ,k, posArreglo = 0;
+	int i, j ,k, posArreglo = nPalindromos;
 
 	// tabla[i][j] sera falso si str[i..j] no es palindromo.
 	// Caso contrario, tabla[i][j] sera verdad.
@@ -72,9 +72,19 @@ int subPalindromos(char* str, char* palindromos[]){
 				}
 				aux[c1] = '\0';
 
-				palindromos[posArreglo] = aux;
+				int l;
+				bool esta = FALSE;
+				for(l = 0; l < posArreglo; l++){
+					if (strcmp(palindromos[l], aux) == 0){
+						esta = TRUE;
+						break;
+					}
+				}
 
-				posArreglo++;
+				if(!esta){
+					palindromos[posArreglo] = aux;
+					posArreglo++;
+				}
 			}
 		}
 	}
@@ -88,7 +98,8 @@ int subPalindromos(char* str, char* palindromos[]){
 int main(){
 	char str[] = "ababa";
 	char* palindromos[10000]; 
-	int nPalindromos = subPalindromos(str, palindromos);
+	int nPalindromos = 0;
+	int nPalindromos = subPalindromos(str, palindromos, nPalindromos);
 
 	printArray(palindromos, nPalindromos);
 
