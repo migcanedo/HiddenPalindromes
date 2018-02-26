@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define TRUE  0 == 0
 #define FALSE !TRUE
@@ -46,9 +47,9 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 		tabla[i][i] = TRUE;
 
 	// Detecta todos los substring de tamaño 2 que se repitan las letras, 
-	// ej: 'aa', 'bb'.
+	// ej: 'aa', 'bb', 'aA', 'Bb'.
     for (i = 0; i < n-1; ++i)
-        if (str[i] == str[i+1])
+        if (str[i] == str[i+1] || str[i] - str[i+1] == 32 || str[i+1] - str[i] == 32)
             tabla[i][i+1] = TRUE;
     
 
@@ -58,9 +59,9 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 		for (i = 0; i < n-k+1 ; ++i){
 			// Obtenemos el final del substring
 			j = i + k - 1;
-
-			// Chequeamos si es un palindromo.
-			if (tabla[i+1][j-1] && str[i] == str[j]){
+			
+			// Chequeamos si es un palindromo, si discriminar mayusculas y minusculas, ej: a == A.
+			if (tabla[i+1][j-1] && (str[i] == str[j] || str[i] - str[j] == 32 || str[j] - str[i] == 32) ){
 				tabla[i][j] = TRUE;
 				
 				char * aux = malloc(sizeof(char)*(j-i)+1);
@@ -82,9 +83,11 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 				}
 
 				if(!esta){
-					palindromos[posArreglo] = aux;
+					palindromos[posArreglo] = strdup(aux);
 					posArreglo++;
 				}
+
+				free(aux);
 			}
 		}
 	}
@@ -96,10 +99,10 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 
 // Main para probar la funcion
 int main(){
-	char str[] = "ababa";
+	char str[] = "aAbaNnABaA";
 	char* palindromos[10000]; 
 	int nPalindromos = 0;
-	int nPalindromos = subPalindromos(str, palindromos, nPalindromos);
+	nPalindromos += subPalindromos(str, palindromos, nPalindromos);
 
 	printArray(palindromos, nPalindromos);
 
