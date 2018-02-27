@@ -1,4 +1,5 @@
-#include <strings.h>
+#include <stdlib.h>
+#include <string.h>
 
 char* concat (char* str1, char* str3) {
     char c = '/';
@@ -9,7 +10,7 @@ char* concat (char* str1, char* str3) {
     str2[len] = c;
     str2[len + 1] = '\0';
     
-    char * str4 = (char *) malloc((1 + strlen(str2) + strlen(str3))*sizeof(char));
+    char * str4 = (char *) malloc((1+strlen(str2)+strlen(str3))*sizeof(char));
     strcpy(str4, str2);
     strcat(str4, str3);
     
