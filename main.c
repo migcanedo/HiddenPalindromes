@@ -1,16 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <ftw.h>
-#include <strings.h>
 #include <errno.h>
 
-// #define EACCES 13      // Numero de Error de Permiso Denegado.
+int maxProf;
+int p[2]; 	// Pipe por donde se comunicaran los procesos.
+int tomarArchivos;
 
-
-void recorrer(char* path){
+void recorrer(char* path, int profundidad){
+	int tieneDir = 0; // Indica si el directorio ha abrir tiene directorios dentro.
 	DIR* srcdir = opendir(path);
 	struct dirent* actual;
 
@@ -24,7 +25,7 @@ void recorrer(char* path){
 		struct stat st;
 
 		// Ignoro los directorios '.'(Referencia al directorio) y '..'(referencia a directorio padre).
-		if(strcmp(actual->d_name, ".") == 0 || strcmp(actual->d_name, "..") == 0 || strcmp(actual->d_name, ".git") == 0)
+		if(strcmp(actual->d_name, ".") == 0 || strcmp(actual->d_name, "..") == 0 || strcmp(actual->d_name, ".git") == 0 )
 			continue;
 
 		if (fstatat(dirfd(srcdir), actual->d_name, &st, 0) < 0) {
@@ -32,32 +33,86 @@ void recorrer(char* path){
 			continue;
 		}
 
-		//Reviso si es un directorio e imprimo el nombre.
-		if (S_ISDIR(st.st_mode)){
+		// Revisar los archivos si el programa pide agregarlos al path.
+		if (S_ISREG(st.st_mode) && tomarArchivos){
 			char* nuevoPath = (char*) concat(path, actual->d_name);
-
-			printf("Directorio: %s\n", nuevoPath);
-			recorrer(nuevoPath);
+			printf("Archivo: %s\n", nuevoPath);
 		}
+		//Reviso si es un directorio y lo reviso recursivamente.
+		else if (S_ISDIR(st.st_mode) && (profundidad == -1 || profundidad < maxProf)){
+			tieneDir = 1;
+			char* nuevoPath = (char*) concat(path, actual->d_name);
+			// Se podria agregar un opendir aqui, de tal forma de revisar los permisos de lectura
+			// antes de abrir una pila de recursion.
+			int aux = (profundidad != -1) ? profundidad + 1 : profundidad;
+			recorrer(nuevoPath, aux);
+		}
+	}
+
+	if(!tieneDir){
+		// Aqui se correria el algoritmo de encontrar los Palindromos con 'path'.
+		printf("Directorio: %s\n", path);
+
+		//Cerramos el lado de lectura del pipe para comenzar a escribir
+        // close(p[0]);
+        write(p[1], path, strlen(path));
 	}
 }
 
 
 int main(int argc, char* argv[]){
 	// Obtengo el path.
-	char* path = (char *) get_current_dir_name();
+	char path[100000];
+    getcwd(path, sizeof(path)); 
+    maxProf = -1;
+    tomarArchivos = 0;
+
+    int opt;
+    while((opt = getopt(argc, argv, "fm:d:")) != -1){
+    	switch(opt){
+    		case 'f': 
+    				tomarArchivos = 1;
+    				break;
+    		case 'm':
+    				maxProf = atoi(optarg);
+    				break;
+    		case 'd':
+    				strcpy(path, optarg);
+    				break;
+    		default:
+    				printf("Error. Flags no validos.\n");
+    				exit(0);
+    	}
+    }
+    
+	// char* path = (char *) get_current_dir_name();
 
 	printf("\nPath Inicial: %s\n\n", path);
 
-	// Copio el path y prubeo el eliminar los '/'
-	char* pathM = (char*) malloc(strlen(path)*sizeof(char));
-	strcpy(pathM, path);
-	quitarSeparador(pathM);
-	printf("Path Sin '/': %s\n\n", pathM);
+	// // Copio el path y pruebo el eliminar los '/'
+	// char* pathM = (char*) malloc(strlen(path)*sizeof(char));
+	// strcpy(pathM, path);
+	// quitarSeparador(pathM);
+	// printf("Path Sin '/': %s\n\n", pathM);
 	
-	// Recorro el Arbol de Directorios.
-	recorrer(path);
+	pid_t childpid = fork();
+	pipe(p);
 
+	if (childpid == 0){
+		// Recorro el Arbol de Directorios.
+		if (maxProf != -1) recorrer(path, 0);
+		else recorrer(path, maxProf);
+	}else{
+		wait(NULL);
+		char pathM[100000];
+
+		// Cerramos el lado de escritura del pipe para comenzar a leer.
+        // close(p[1]);
+     //    while(read(p[0], pathM, 100000)){
+	    //     printf("Directorio En Padre: %s\n", pathM);
+	    // }
+	}
+	
 	exit(0);
 }
 
