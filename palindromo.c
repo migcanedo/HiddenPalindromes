@@ -22,6 +22,17 @@ void printArray(char* arreglo[], int tam){
 }
 
 /*
+	Funcion que dado un caracter, retorna TRUE si el 
+	caracter es una letra bien sea Mayuscula ('A'..'Z') o 
+	Minuscula ('a'..'z'). En caso contrario, retornara FALSE.
+*/
+bool esLetra(char c){
+	if ((c >= 97 && c <= 122) || (c >= 65 && c <= 90))
+		return TRUE;
+	return FALSE;
+}
+
+/*
 	Funcion que detecta y almacena en el arreglo 'palindromos' 
 	(el cual ya posee 'nPalindromos' almacenados), los substring
 	que sean Palindromos del string 'str'. Retornara la cantidad de 
@@ -49,23 +60,33 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 	// Detecta todos los substring de tamaño 2 que se repitan las letras, 
 	// ej: 'aa', 'bb', 'aA', 'Bb'.
     for (i = 0; i < n-1; ++i)
-        if (str[i] == str[i+1] || str[i] - str[i+1] == 32 || str[i+1] - str[i] == 32)
+        if (str[i] == str[i+1] || 
+        		(esLetra(str[i]) &&	(str[i] - str[i+1] == 32 || str[i+1] - str[i] == 32)))
             tabla[i][i+1] = TRUE;
-    
+
 
 	// Iteramos deacuerdo al tamaño de cada substring (k).
 	for (k = 3; k <= n; ++k){
 		// i es el indice inicla del substring.
-		for (i = 0; i < n-k+1 ; ++i){
-			// Obtenemos el final del substring
+		for (i = 0; i < n-k+1 ; ++i){	
+			// Obtenemos el final del substring.
 			j = i + k - 1;
 			
-			// Chequeamos si es un palindromo, si discriminar mayusculas y minusculas, ej: a == A.
-			if (tabla[i+1][j-1] && (str[i] == str[j] || str[i] - str[j] == 32 || str[j] - str[i] == 32) ){
+			// Ignora los espacios intermedios para evaluar si son palindromos.
+			int auxi = i, auxj = j;
+			while(str[auxi+1] == ' ') auxi++;
+			while(str[auxj-1] == ' ') auxj--;
+
+			
+			// Chequeamos si es un palindromo, sin discriminar mayusculas de minusculas, ej: 'a' == 'A'.
+			if (tabla[auxi+1][auxj-1] && 
+					(str[i] == str[j] || 
+						( esLetra(str[i]) && (str[i] - str[j] == 32 || str[j] - str[i] == 32)))) {
+
 				tabla[i][j] = TRUE;
 				
+				// Copiamos el Substring en el apuntador 'aux'.			
 				char * aux = malloc(sizeof(char)*(j-i)+1);
-
 				int c1 = 0, c2;
 				for(c2 = i; c2 <= j; c2++){
 					aux[c1] = str[c2];
@@ -73,6 +94,7 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 				}
 				aux[c1] = '\0';
 
+				// Luego comparamos que el Subpalindromo ya no este reportado como conseguido.
 				int l;
 				bool esta = FALSE;
 				for(l = 0; l < posArreglo; l++){
@@ -81,7 +103,7 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 						break;
 					}
 				}
-
+				// Si no lo esta, lo agregamos al arreglo.
 				if(!esta){
 					palindromos[posArreglo] = strdup(aux);
 					posArreglo++;
@@ -99,7 +121,7 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 
 // Main para probar la funcion
 int main(){
-	char str[] = "aAbaNnABaA";
+	char str[] = "AnItA lAVa La TiNa";
 	char* palindromos[10000]; 
 	int nPalindromos = 0;
 	nPalindromos += subPalindromos(str, palindromos, nPalindromos);
