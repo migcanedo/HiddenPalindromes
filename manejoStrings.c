@@ -1,15 +1,15 @@
-#include <string.h>
+#include <strings.h>
 
 char* concat (char* str1, char* str3) {
     char c = '/';
     
-    size_t len = strlen(str1);
-    char * str2 = (char *) malloc(len + 2); 
+    int len = strlen(str1);
+    char * str2 = (char *) malloc((len+2)*sizeof(char)); 
     strcpy(str2, str1);
     str2[len] = c;
     str2[len + 1] = '\0';
     
-    char * str4 = (char *) malloc(1 + strlen(str2)+ strlen(str3));
+    char * str4 = (char *) malloc((1 + strlen(str2) + strlen(str3))*sizeof(char));
     strcpy(str4, str2);
     strcat(str4, str3);
     
@@ -27,6 +27,18 @@ void quitarEspacios(char* str){
 			i++;
 	}
 	*i = 0;
+}
+
+
+void quitarSeparador(char* str){
+    char* i = str;
+    char* j = str;
+    while(*j != 0){
+        *i = *j++;
+        if(*i != '/')
+            i++;
+    }
+    *i = 0;
 }
 
 char* reemplazarChar(char* str, char find, char replace){
