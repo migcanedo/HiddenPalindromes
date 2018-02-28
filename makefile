@@ -1,13 +1,13 @@
 CC = gcc -g -pthread
 
-main: main.o manejoStrings.o #palindromo.o
-	$(CC) -o main main.o manejoStrings.o #palindromo.o
+main: main.o buscaPalindromos.o manejoStrings.o 
+	$(CC) -o main main.o buscaPalindromos.o manejoStrings.o 
 
-main.o: main.c 
+main.o: main.c buscaPalindromos.h 
 	$(CC) -c main.c 
 
-manejoStrngs.o: manejoStrings.c
-	$(CC) -c manejoStrings.c
+buscaPalindromos.o: buscaPalindromos.c buscaPalindromos.h manejoStrings.h
+	$(CC) -c buscaPalindromos.c 
 
-# palindromo.o: palindromo.c
-# 	$(CC) -c palindromo.c
+manejoStrngs.o: manejoStrings.c manejoStrings.h
+	$(CC) -c manejoStrings.c
