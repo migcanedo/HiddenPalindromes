@@ -49,13 +49,21 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 	bool tabla[n][n];
 
 	// Inicializamos todos los espacios del arreglo con puros 0,
-	// equivalentes a false.
+	// equivalentes a falso.
 	memset(tabla, 0, sizeof(tabla));
 
 	// Todos los substring de tamaño 1 son Palindromos.
 	// Se inicializan con verdad para que el algoritmo funcione correctamente.
-	for (i = 0; i < n; ++i)
+	for (i = 0; i < n; ++i){
 		tabla[i][i] = TRUE;
+
+		// Si el caracter es acento, ocupa el doble de espacio, y
+		// por tanto se inicializa todo su espacio ocupado como verdad.
+		if (str[i] == -61) {
+			tabla[i][i+1] = TRUE;
+			tabla[i+1][i] = TRUE;
+		}
+	}
 
 	// Detecta todos los substring de tamaño 2 que se repitan las letras, 
 	// ej: 'aa', 'bb', 'aA', 'Bb'.
@@ -74,18 +82,21 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 			
 			// Ignora los espacios intermedios para evaluar si son palindromos.
 			int auxi = i, auxj = j;
-			while(str[auxi+1] == ' ') auxi++;
-			while(str[auxj-1] == ' ') auxj--;
-
+			int especialesIguales = 0;
+			if (str[auxi] == -61 && str[auxi] == str[auxj-1] && 
+				(str[auxi+1] == str[auxj] || (str[auxi+1] - str[auxj] == 32 || str[auxj] - str[auxi+1] == 32) ) ) {
+				auxi++; auxj--;
+				especialesIguales = 1;
+			}
 			
 			// Chequeamos si es un palindromo, sin discriminar mayusculas de minusculas, ej: 'a' == 'A'.
 			if (tabla[auxi+1][auxj-1] && 
-					(str[i] == str[j] || 
+					((str[i] > 0  && str[i] == str[j]) || especialesIguales ||
 						( esLetra(str[i]) && (str[i] - str[j] == 32 || str[j] - str[i] == 32)))) {
 
 				tabla[i][j] = TRUE;
 				
-				// Copiamos el Substring en el apuntador 'aux'.			
+				// Copiamos el Substring en el apuntador 'aux'.	
 				char * aux = malloc(sizeof(char)*(j-i)+1);
 				int c1 = 0, c2;
 				for(c2 = i; c2 <= j; c2++){
@@ -93,7 +104,7 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 					c1++;
 				}
 				aux[c1] = '\0';
-
+				
 				// Luego comparamos que el Subpalindromo ya no este reportado como conseguido.
 				int l;
 				bool esta = FALSE;
@@ -121,7 +132,8 @@ int subPalindromos(char* str, char* palindromos[], int nPalindromos){
 
 // Main para probar la funcion
 int main(){
-	char str[] = "AnItA lAVa La TiNa";
+	char str[] = "$a";
+	printf("%d\n", strlen(str));
 	char* palindromos[10000]; 
 	int nPalindromos = 0;
 	nPalindromos += subPalindromos(str, palindromos, nPalindromos);
