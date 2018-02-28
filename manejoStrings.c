@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+
 /*
 
 */
@@ -7,8 +8,8 @@ char* concat (char* str1, char* str3) {
     char c = '/';
     
     int len = strlen(str1);
-    char* str2;
-    str2 = strdup(str1);
+    char* str2 = malloc(strlen(str1)+2);
+    strcpy(str2, str1);
     str2[len] = c;
     str2[len + 1] = '\0';
     
