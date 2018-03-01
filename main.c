@@ -20,10 +20,9 @@
 */
 int main(int argc, char* argv[]){
 	// Obtengo el path.
-	char path[100000];
-	getcwd(path, sizeof(path)); 
+	char path[100000] = ".";
 
-	int maxProf = -1;	// -1 := Que debe recorrer todo hasta no poder mas.
+	int maxProf = 20;	// -1 := Que debe recorrer todo hasta no poder mas.
 	int tomarArchivos = 0;	// Indicara si los Archivos se tomaran en cuenta para detectar los palindromos.
 
 	// Detectamos si se especifico algun flag para correr el programa.
@@ -38,7 +37,6 @@ int main(int argc, char* argv[]){
 					break;
 			case 'd':					// Especifica desde que directorio empezar a armar el arbol.
 					strcpy(path, optarg);
-					// if (path[strlen(path)-1] == '/') path[strlen(path)-1] = '\0';
 					break;
 			default:					// Si se especifica un flag no valido.
 					printf("Error. Flags no validos.\n");

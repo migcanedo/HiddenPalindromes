@@ -18,6 +18,7 @@ int maxProf; 				// Profundidad maxima del arbol de directorios, sera -1 si no s
 int p[2]; 					// Pipe por donde se comunicaran los procesos.
 int tomarArchivos;			// Indicara si se deben tomar en cuanta los archivos.
 sem_t *leer, *escribir;		// Semaforos para saber cuando se puede leer y escribir, respectivamente, del pipe.
+char * pathOrigen;			// Path donde se empieza a correr el programa.
 
 /*
 	Funcion que recorre de manera recursiva los directorios y archivos hasta una profundidad establecida.
@@ -25,8 +26,9 @@ sem_t *leer, *escribir;		// Semaforos para saber cuando se puede leer y escribir
 */
 void recorrer(char* path, int profundidad){
 	int tieneDir = 0; // Indica si el directorio ha abrir tiene directorios dentro.
-		
-	DIR* srcdir = opendir(path); // Abrimos el directorio indicado en el path.
+	
+	char *pathReal = (char*) concat(pathOrigen, path); 
+	DIR* srcdir = opendir(pathReal); // Abrimos el directorio indicado en el path.
 	struct dirent* actual; 
 
 	if (srcdir == NULL) {
@@ -42,10 +44,10 @@ void recorrer(char* path, int profundidad){
 		if(strcmp(actual->d_name, ".") == 0 || strcmp(actual->d_name, "..") == 0 )
 			continue;
 
-		if (fstatat(dirfd(srcdir), actual->d_name, &st, 0) < 0) {
-			perror(actual->d_name);
+		// Revisa si tengo permisos para leer el directorio. Si no los tiene, simplemente lo ignora y sigue
+		if (fstatat(dirfd(srcdir), actual->d_name, &st, 0) < 0) 
 			continue;
-		}
+	
 
 		// Revisar los archivos si el programa pide agregarlos al path.
 		if (S_ISREG(st.st_mode) && tomarArchivos){
@@ -54,29 +56,30 @@ void recorrer(char* path, int profundidad){
 			
 			// Comunicamos el path al proceso padre mediante el pipe.
 			sem_wait(escribir);
-			printf("F: %s\n", nuevoPath);
 			if (write(p[1], nuevoPath, 100000) < 0)
 				sem_post(escribir);
 			sem_post(leer); 				// Indicamos que ya se peude leer el pipe.
 		}
 
 		//Reviso si es un directorio y lo reviso recursivamente.
-		else if (S_ISDIR(st.st_mode) && (profundidad == -1 || profundidad < maxProf)){
+		else if (S_ISDIR(st.st_mode) && profundidad < maxProf){
 			tieneDir = 1; 	// Indicamos que el directorio posee direcctorios, por tanto no es una hoja.
 
 			char* nuevoPath = (char*) concat(path, actual->d_name);			
-			int aux = (profundidad != -1) ? profundidad + 1 : profundidad;
+			
+			int aux = profundidad+1;
 			recorrer(nuevoPath, aux);
 		}
 	}
 	
 	sinPermisos: 	// Etiqueta donde se enviara cuando no se tenga permisos para leer el directorio.
-	if(!tieneDir){
+	if(!tieneDir && profundidad){
 		// Comunicamos el path al proceso padre mediante el pipe.
 		sem_wait(escribir); 		// Esperamos que podamos escribir. 
 		write(p[1], path, 100000);
 		sem_post(leer); 			// Indicamos que ya se peude leer el pipe.
 	}
+	closedir(srcdir);
 }
 
 /*
@@ -84,7 +87,7 @@ void recorrer(char* path, int profundidad){
 	otro para evaluar los path, encontrara todos los palindromos ocultos en cada uno de los path.
 */
 void buscaPalindromos(int tArch, int maxP, char *pth){
-	char * path = pth;
+	pathOrigen = pth; 	// Actualizamos el path del directorio donde se empezara a correr el programa.
 
 	tomarArchivos = tArch;
 	maxProf = maxP;
@@ -94,7 +97,7 @@ void buscaPalindromos(int tArch, int maxP, char *pth){
 
 	// Abrimos los Semaforos Nombrados que usaran los procesos para sincronizarse.
 	leer = sem_open("semL", (O_CREAT|O_EXCL), 1, 0);
-	escribir = sem_open("semE", (O_CREAT|O_EXCL), 1, 0);
+	escribir = sem_open("semE", (O_CREAT|O_EXCL), 1, 1);
 
 	sem_unlink("semL");
 	sem_unlink("semE");
@@ -105,8 +108,7 @@ void buscaPalindromos(int tArch, int maxP, char *pth){
 	// Proceso Hijo, encargado de la recursion.
 	if (childpid == 0){
 		// Recorro el Arbol de Directorios.		
-		if (maxProf != -1) recorrer(path, 0);
-		else recorrer(path, maxProf);
+		recorrer("", 0);
 	}
 	// Proceso Padre, encargado de detectar los palindromos en los path que le indique el hijo.
 	else{
@@ -115,18 +117,18 @@ void buscaPalindromos(int tArch, int maxP, char *pth){
 		int nPalindromos = 0;		// Cantidad de palindromos encontrada.
 
 
-		// Cerramos el lado de escritura del pipe para comenzar a leer.
-		sem_post(escribir);
-		while(read(p[0], pathM, sizeof(pathM)) > 0){
+		if (maxProf){ 
+			// Cerramos el lado de escritura del pipe para comenzar a leer.
 			close(p[1]);
-			sem_wait(leer);					// Esperamos que podamos leer.
-			// Quitamos los separadores de directorios en el path ('/').
-			quitarSeparador(pathM);			
-			// Buscamos los subpalindromos del path, y actualizamos la cantidad de Palindromos que hay.
-			nPalindromos = subPalindromos(pathM, palindromos, nPalindromos);
-			sem_post(escribir);				// Indicamos que se puede escribir.			
+			while(read(p[0], pathM, sizeof(pathM)) > 0){
+				sem_wait(leer);					// Esperamos que podamos leer.
+				// Quitamos los separadores de directorios en el path ('/').
+				quitarSeparador(pathM);			
+				// Buscamos los subpalindromos del path, y actualizamos la cantidad de Palindromos que hay.
+				nPalindromos = subPalindromos(pathM, palindromos, nPalindromos);
+				sem_post(escribir);				// Indicamos que se puede escribir.			
+			}
 		}
-
 		wait(NULL);		// Esperamos que el hijo termine
 		
 		// Imprimimos el arreglo de todos los Palindromos encontrados.
