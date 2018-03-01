@@ -54,6 +54,7 @@ void recorrer(char* path, int profundidad){
 			
 			// Comunicamos el path al proceso padre mediante el pipe.
 			sem_wait(escribir);
+			printf("F: %s\n", nuevoPath);
 			if (write(p[1], nuevoPath, 100000) < 0)
 				sem_post(escribir);
 			sem_post(leer); 				// Indicamos que ya se peude leer el pipe.
@@ -115,7 +116,6 @@ void buscaPalindromos(int tArch, int maxP, char *pth){
 
 
 		// Cerramos el lado de escritura del pipe para comenzar a leer.
-		// close(p[1]);
 		sem_post(escribir);
 		while(read(p[0], pathM, sizeof(pathM)) > 0){
 			close(p[1]);
@@ -131,7 +131,10 @@ void buscaPalindromos(int tArch, int maxP, char *pth){
 		
 		// Imprimimos el arreglo de todos los Palindromos encontrados.
 		printf("\n\n");
-		printArray(palindromos, nPalindromos);
+		if (nPalindromos) 
+			printArray(palindromos, nPalindromos);
+		else
+			printf("No Existen.\n");
 		printf("\n\n");
 	}
 }

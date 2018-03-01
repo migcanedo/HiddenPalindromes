@@ -11,3 +11,6 @@ buscaPalindromos.o: buscaPalindromos.c buscaPalindromos.h manejoStrings.h
 
 manejoStrngs.o: manejoStrings.c manejoStrings.h
 	$(CC) -c manejoStrings.c
+
+clean: 
+	rm main *.o
